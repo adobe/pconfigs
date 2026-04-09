@@ -1,0 +1,19 @@
+/* Color type-hint identifiers in code blocks.
+   Tokens receive the `.typehint` class via typehints.js.
+   Apply only in dark mode (explicit dark or auto+prefers dark). */
+
+/* Explicit dark mode */
+body[data-theme="dark"] .highlight .typehint {
+  color: #4ec9b0 !important;
+  font-weight: 500;
+}
+
+/* Auto mode with user preferring dark */
+@media (prefers-color-scheme: dark) {
+  body:not([data-theme="light"]) .highlight .typehint {
+    color: #4ec9b0 !important;
+    font-weight: 500;
+  }
+}
+
+

@@ -1,0 +1,7 @@
+defaults:
+  - first
+  - _self_
+
+trainer:
+  base_lr: 1e-3
+  steps: ${sub:${len:${.lr_schedule}},1}

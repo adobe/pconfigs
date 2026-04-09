@@ -1,0 +1,10 @@
+# Base experiment.
+TrainerConfig.steps = 3
+TrainerConfig.base_lr = 3e-4
+TrainerConfig.total_steps = 6
+TrainerConfig.min_lr_ratio = 0.1
+TrainerConfig.grad_accum_steps = 4
+TrainerConfig.num_devices = 2
+
+TrainerConfig.effective_batch_size = @compute_effective_batch_size()
+TrainerConfig.lr_schedule = @make_lr_schedule()
