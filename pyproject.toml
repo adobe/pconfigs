@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pconfigs"
+version = "0.2.0"
+description = "Configuration primitives and utilities for Python projects"
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "black",
+  "pytest",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2.2",
+  "twine>=4",
+  "pillow>=10",
+  "torch>=2",
+]
+docs = [
+  "sphinx>=7.3",
+  "furo>=2024.8.6",
+  "myst-parser>=3.0",
+  "sphinx-copybutton>=0.5.2",
+  "sphinx-autobuild>=2024.4.16",
+]
+
+[tool.setuptools.packages.find]
+include = ["pconfigs*"]
+exclude = ["tests*", "my_module*"]
+
+[tool.setuptools.package-data]
+pconfigs = [
+    "claude_assets/rules/*.md",
+    "claude_assets/skills/*/SKILL.md",
+    "claude_assets/templates/*.template",
+    "claude_assets/installation_test/*.md",
+    "claude_assets/installation_test/*.sh",
+    "claude_assets/installation_test/questions/*.md",
+    "cursor_assets/rules/*.md",
+    "cursor_assets/skills/*/SKILL.md",
+    "cursor_assets/installation_test/*.md",
+    "cursor_assets/installation_test/*.sh",
+    "cursor_assets/installation_test/questions/*.md",
+]
+
+[project.scripts]
+ptest = "pconfigs.ptest:ptest"

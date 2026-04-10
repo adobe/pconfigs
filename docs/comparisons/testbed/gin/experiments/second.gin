@@ -1,0 +1,5 @@
+# Override only what changed.
+include "experiments/first.gin"
+
+TrainerConfig.base_lr = 1e-3
+TrainerConfig.steps = 5

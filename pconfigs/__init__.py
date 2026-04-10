@@ -1,0 +1,56 @@
+# Copyright 2026 Adobe. All rights reserved.
+# This file is licensed to you under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License. You may obtain a copy
+# of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software distributed under
+# the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+# OF ANY KIND, either express or implied. See the License for the specific language
+# governing permissions and limitations under the License.
+
+from pconfigs.constructable import KwargMockFunc as PCallable
+from pconfigs.kwarg_mock import Kwarg, NotMock, Omitted
+from pconfigs.pinnable import (
+    Pin,
+    Pinned,
+    Required,
+    pconfig,
+    pconfiged,
+    pdefaults,
+    penum,
+    penv,
+    pinputs,
+    pproperty,
+    psetter,
+)
+from pconfigs.tests.testing import TestConfigs, TestSubdirs
+
+__all__ = [
+    "PCallable",
+    "Pin",
+    "Pinned",
+    "Required",
+    "pconfig",
+    "pconfiged",
+    "pdefaults",
+    "pproperty",
+    "pinputs",
+    "psetter",
+    "penum",
+    "penv",
+    "Kwarg",
+    "NotMock",
+    "Omitted",
+    "TestConfigs",
+    "TestSubdirs",
+]
+
+try:
+    from importlib.metadata import PackageNotFoundError, version
+except ImportError:  # Python <3.8
+    __version__ = "0.0.0"
+
+try:
+    __version__ = version("pconfigs")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
