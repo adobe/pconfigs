@@ -10,8 +10,6 @@
 
 from __future__ import annotations
 
-this is a deliberate syntax error
-
 from os import path
 
 # Only decorators. Do not import PConfig etc.
