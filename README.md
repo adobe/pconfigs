@@ -4,6 +4,8 @@
 
 Most ML codebases are split into experiment code, main scripts, and config text files. As the codebase evolves, the experiment and main script code change, the config text drifts out of sync, and results become difficult to reproduce. New experiments can also be difficult to implement because the main script must anticipate future experiments; when the main script cannot express the next experiment, large parts of the system must be rewritten. In practice, rewrites are postponed with an unsustainable patchwork of defaults, overrides, and options. Meanwhile, config text is scattered across external file systems or servers, and the truth of what will run becomes difficult for humans and agents to infer. `pconfigs` solves these problems by replacing config text with Python config files that live in the repo alongside the code, and fully specify the experiment, main, and config together — they can be executed, constructed, printed to reveal the fully resolved configuration of every submodule, and tested to ensure they stay valid as the codebase evolves.
 
+**[Documentation](https://opensource.adobe.com/pconfigs/)**
+
 ## Installation
 ```
 pip install pconfigs
@@ -60,7 +62,7 @@ See the [quickstart](https://adobe.github.io/pconfigs/introduction/quickstart.ht
 
 ### Contributing
 
-Contributions are welcomed! Read the [Contributing Guide](./.github/CONTRIBUTING.md) for more information.
+Contributions are welcomed! Read the [Contributing Guide](https://github.com/adobe/pconfigs/blob/main/.github/CONTRIBUTING.md) for more information.
 
 ### Licensing
 
