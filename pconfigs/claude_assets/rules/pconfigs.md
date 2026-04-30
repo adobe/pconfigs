@@ -18,6 +18,7 @@ You are generating code for a codebase that uses the **pconfigs** library. Follo
   - Use `@pconfig(constructs=TheClass)` for classes you own / can modify.
   - Keep config classes minimal: type hints only; no side effects at import time.
 - **Defaults** must be defined separately using `pdefaults += ...` (avoid cluttering the type definition).
+- When you want the default value of a config type, use `pdefaults(MyConfig)` rather than `MyConfig()`. This reads clearly as "use the defaults" and applies everywhere: config instance files, `pdefaults +=` blocks, and module code.
 - Do not cache config values on `self`; always read them from `self.config`:
   ```python
   # WRONG — caches config value as instance attribute
@@ -58,6 +59,7 @@ You are generating code for a codebase that uses the **pconfigs** library. Follo
 ### Subconfigs (composition over registries)
 
 - Prefer hierarchical configs: `SystemConfig` holds `trainer_config: TrainerConfig`, etc.
+- Never implement string registries or `if/elif` factories to pick submodule types. Let configs carry the constructable type.
 - Never implement dispatch functions that inspect a config's type (via strings, dicts, `isinstance`, or any other mechanism) to decide which object to construct. Each config type must construct its own object via `@pconfig(constructs=...)` and `.construct()`. If you find yourself writing a function that takes a base config type and returns different objects depending on which derived config was passed, that function is a factory — replace it with pconfiged polymorphism. (This rule does not apply to `@pproperty` methods that use `isinstance` on sibling sub-configs to compute derived values or pin fields — that is config-time wiring, not runtime dispatch.)
 
 ### Directory separation (non-negotiable)
@@ -65,7 +67,7 @@ You are generating code for a codebase that uses the **pconfigs** library. Follo
 Directories containing a `__pconfigs__.py` sentinel are config-instance-only directories. They must contain only:
 - Config instance files (files that define `config = ...` instances)
 - `__init__.py` for package structure
-- `__pconfigs__.py` sentinel (empty)
+- `__pconfigs__.py` sentinel (must be empty or contain only ptest sentinels `TestSubdirs` or `TestManually`)
 - Subdirectories following the same constraint
 
 Never place module code (`@pconfiged` classes, `@pconfig` types, or `pdefaults` definitions) in a directory containing a `__pconfigs__.py` sentinel. Module code belongs in `modules/` or other type-definition directories.
@@ -76,6 +78,14 @@ Never place module code (`@pconfiged` classes, `@pconfig` types, or `pdefaults` 
 - Every `@pproperty` must have a corresponding type-annotated class field.
 - If a `@pproperty` does not use `pinputs(...)`, its class field must be typed as `Pinned[T]`.
 - When a property needs the user-provided input, read it via `pinputs(self)` (do not read back `self.<field>` when you need the original user value).
+- Every `Pinned[T]` field must have a corresponding entry in `pdefaults` set to the `Pinned` sentinel (not a concrete value):
+  ```python
+  pdefaults += MyConfig(
+      derived_field=Pinned,
+  )
+  ```
+  The `Pinned` sentinel tells pconfigs that this field is managed by a `@pproperty` and must not be set by users.
+- `pinputs(self)` vs `self`: Inside a `@pproperty` for field X, `self.X` returns the pproperty-computed value (i.e., the return value of this pproperty), while `pinputs(self).X` returns the raw user-provided value. The primary use of `pinputs(self)` is to read the user-provided value of the field the current pproperty is overwriting — e.g., a pproperty for `optimizer_config` reads `pinputs(self).optimizer_config` to copy and modify the user's input. Other pproperties that need `optimizer_config` should read `self.optimizer_config` to get the final computed version.
 - When configs include multiple `Pinned` fields, list user-settable fields first and group `Pinned` fields at the end.
 - If a field is computed/overwritten and users must not set it, type it as `Pinned[T]` and set it with `Pin(value)` in code.
 - `Pin(...)` is only used when constructing configs (e.g., `ConfigType(x=Pin(...))`); `@pproperty` methods should return plain values.
@@ -130,7 +140,6 @@ Never place module code (`@pconfiged` classes, `@pconfig` types, or `pdefaults` 
   )
   ```
 - When creating the first config instance for a new config type, include the salient conceptual parameters explicitly and set them to their default values so the important options are visible. Avoid internal implementation details (paths, key strings, filenames); only include user-relevant parameters.
-- When setting a config to its defaults inside a config instance file, use `pdefaults(...)` rather than constructing the config type directly.
 
 ### Environments
 
@@ -142,7 +151,20 @@ Never place module code (`@pconfiged` classes, `@pconfig` types, or `pdefaults` 
 - Never use empty-string sentinels for env vars; use `None` to represent "unset."
 - Env vars must use simple types only (e.g., `str`, `int`, `float`, `bool`); avoid unions like `str | None`. You may still use `None` as a default value.
 - Do not include `environment` in `pdefaults` for configs.
-- Define environment config classes immediately above the config class that uses them.
+- Define environment config classes immediately above the config class that uses them. When a pconfiged class's config uses an environment, the env class goes between the pconfiged class and its config class (satisfying both the trio ordering and the "immediately above" placement):
+  ```python
+  @pconfiged
+  class System:
+      config: SystemConfig
+
+  @penv(convention="uppercase")
+  class SystemEnv:
+      data_dir: str = None
+
+  @pconfig(constructs=System)
+  class SystemConfig:
+      environment: SystemEnv
+  ```
 
 ### Enums
 
@@ -185,22 +207,46 @@ some_result = SomeFunc(param_without_default="some value")
 - When using `@pconfiged(runnable=True)`, the class inherits from `ConfigRunnable`. To access the config dotpath string (e.g., for logging or initializing a run directory), you must use signature (2) above and access `parsed_args.config`.
 - Runnable `main` methods must return `int` (follow `config_runner.py`).
 
-### How to inspect config values (non-negotiable)
+### How to inspect a pconfigs config (non-negotiable)
 
-pconfigs is a configuration library where final config values are the product of executing Python code (defaults, computed properties, inheritance chains). Reading the source files does not tell you the final config values. You must use the print command to see the resolved configuration.
+The printed config is the source of truth for **everything** about a pconfigs run, including (a) which entrypoint executes, (b) which classes get constructed, (c) which subclass replaces a base class, (d) the full sub-config tree, and (e) every field value. Source files cannot answer these questions: pconfigs computes the answer at construction time by merging defaults, evaluating `@pproperty` methods, and resolving inheritance chains. Reading source to infer runtime behavior is a habit transferred from non-pconfigs codebases and will produce wrong answers here.
 
-NEVER try to determine config values by reading the Python source files and tracing imports. The source code does not contain enough information because pconfigs applies defaults, computes properties, and merges inheritance chains at construction time. ALWAYS use the print command below.
+**Before grepping or reading any source file to answer a question about an experiment, config, or run**, print the relevant config to a file and grep that file. The following are violations of this rule:
 
-To find a config value in an experiment file like `project/pconfig/path/to/experiment.py`:
+- Grepping the source for `class FooConfig` to find out what fields a config has.
+- Reading a `.py` file to determine which subclass of a base class will be constructed at runtime.
+- Tracing imports to figure out the entrypoint of a runnable config.
+- Reading `pdefaults += ...` blocks to determine the effective default of a field.
+- Inferring TB tag strings, log paths, or any other resolved value from `@pproperty` methods in source.
+
+The fix in every case is the same: print the config, grep the printed file.
+
+**Print once and reuse.** A printed config is good for the whole session unless the part of the config you're asking about has changed in source. Cache the file at `/tmp/pconfig_<dotpath_tail>.py` and reuse it across questions; do not reprint between questions.
 
 ```bash
-python -m pconfigs.print project.pconfig.path.to.experiment.config > /tmp/config.py
-grep -A 5 "field_name" /tmp/config.py
+# 1. Check whether a relevant printed config is already cached.
+ls /tmp/pconfig_*.py 2>/dev/null
+
+# 2. If not cached, print once.
+python -m pconfigs.print <dotpath>.config > /tmp/pconfig_<dotpath_tail>.py
+
+# 3. Grep the printed file for whatever you need.
+grep -n "<thing>" /tmp/pconfig_<dotpath_tail>.py
 ```
 
-The printed output can be extremely large (over 10,000 lines). Never read the entire output. Always pipe to a file and grep for the specific field or config class you need.
+**Reprint only when:**
 
-Note: Ensure the project's Python environment is active before running pconfigs commands. See the project's CLAUDE.md Environment section for setup instructions.
+- The config dotpath changed (you're asking about a different experiment).
+- The part of the config tree you're asking about has been edited in source since the cache was written.
+- You need 100% confidence the implementation matches the latest code (e.g., before committing, before launching a run, when verifying a specific edit landed).
+
+For "I want to understand what this experiment does" or "I'm planning a change," the cached print is sufficient. Re-reading source to update an in-memory model of the config is the wrong move — keep using the printed file.
+
+**Cite the printed-config path in any answer that names a runtime value, class, entrypoint, or sub-config wiring** (e.g., `/tmp/pconfig_encoded_latents_loss.py:15163`). If your answer doesn't cite a printed-config line, you didn't consult the source of truth.
+
+**Mental model:** Think of `.py` source as the pre-construction template and the printed config as the post-construction reality. Pconfigs is a compilation step from template to reality. Your reasoning must be against the post-construction reality, not the template.
+
+The printed output can be extremely large (over 10,000 lines). Never read the entire output — always grep it for the specific field, class, or sub-config you need.
 
 ### Printing & testing
 
@@ -210,7 +256,6 @@ Note: Ensure the project's Python environment is active before running pconfigs 
 - Test all pconfigs in the repository by running `ptest`.
 - Use `TestSubdirs` / `TestManually` sentinels in `__pconfigs__.py` when needed.
 
-Note: Ensure the project's Python environment is active before running these commands. See the project's CLAUDE.md Environment section for setup instructions.
 
 ### Typing rules (Python 3.10)
 

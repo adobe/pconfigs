@@ -104,11 +104,14 @@ The specialization steps below apply only to child relationships. In this exampl
 6. Add the new specialized code in `shorthand_name.py` by importing from `path/to/previous/base.py`.
 
 - Never put significant code in `__init__.py` files; only use them for the specialization step above (exactly `from .base import *`).
-- `__pconfigs__.py` sentinel files must be empty (no imports or other code).
+- `__pconfigs__.py` sentinel files must be empty or contain only ptest sentinels `TestSubdirs` or `TestManually`. Do not put config instances or module code in them.
 
 ### pconfig instance file operations (non-negotiable)
 
-- Never rename or move existing pconfig instance files. Renaming breaks journal dotpath references (notebook entries, questions, conclusions) and S3 run paths that cannot be perfectly maintained. Only rename a file that was just created in the current session and has never been run or referenced anywhere.
+Before moving or renaming a pconfig instance file, ask: **is this the child specialization restructuring** (moving `foo.py` → `foo/base.py` and creating `foo/__init__.py` with `from .base import *`)?
+
+- **Yes** → proceed. The `__init__.py` re-export preserves the original dotpath exactly.
+- **No** → do not rename or move the file. Any other rename or move changes the dotpath and breaks references that are outside of the repo. Only exception: a file created in the current session that has never been run or referenced anywhere.
 
 ### pconfig code modifications (non-negotiable)
 
