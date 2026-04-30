@@ -9,6 +9,7 @@
 # governing permissions and limitations under the License.
 
 from pconfigs.constructable import KwargMockFunc as PCallable
+from pconfigs.constructable import NoneConfig
 from pconfigs.kwarg_mock import Kwarg, NotMock, Omitted
 from pconfigs.pinnable import (
     Pin,
@@ -27,6 +28,7 @@ from pconfigs.tests.testing import TestConfigs, TestSubdirs
 
 __all__ = [
     "PCallable",
+    "NoneConfig",
     "Pin",
     "Pinned",
     "Required",

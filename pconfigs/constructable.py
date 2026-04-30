@@ -17,7 +17,7 @@ from typing import Any, Callable, ClassVar, Type, TypeVar, Union
 from pconfigs.config import Config
 from pconfigs.kwarg_mock import KwargMockConfig, NotMock
 from pconfigs.kwarg_mock import Required as KwargMockRequired
-from pconfigs.pinnable import Required
+from pconfigs.pinnable import Required, pconfig, pdefaults
 
 
 @dataclass(repr=False)
@@ -130,3 +130,48 @@ class KwargMockFunc(KwargMockConfig):
 
     def construct(self) -> KwargMockFunc:
         return self
+
+
+@pconfig
+class NoneConfig(ConfigConstructableInterface):
+    """A config whose ``construct()`` returns ``None``.
+
+    Use ``NoneConfig`` in a union with another constructable config to express an optional sub-config without
+    forcing every constructor to write the verbose ternary pattern.
+
+    Without ``NoneConfig`` (verbose, branches at every use site)::
+
+        @pconfig(constructs=MyClass)
+        class MyClassConfig:
+            sub_config: Optional[SubConfig]
+
+        @pconfiged
+        class MyClass:
+            def __init__(self):
+                self.sub = (
+                    self.config.sub_config.construct()
+                    if self.config.sub_config is not None
+                    else None
+                )
+
+    With ``NoneConfig`` (uniform, single ``construct()`` call)::
+
+        @pconfig(constructs=MyClass)
+        class MyClassConfig:
+            sub_config: SubConfig | NoneConfig
+
+        @pconfiged
+        class MyClass:
+            def __init__(self):
+                self.sub = self.config.sub_config.construct()  # ``None`` when sub_config is NoneConfig()
+
+    Callers turn the sub-config off by passing ``sub_config=NoneConfig()`` and turn it on by passing a real
+    ``SubConfig(...)``. Both branches go through the same ``.construct()`` interface, so the consuming class
+    does not need to know which case it received.
+    """
+
+    def construct(self) -> None:
+        return None
+
+
+pdefaults += NoneConfig()
