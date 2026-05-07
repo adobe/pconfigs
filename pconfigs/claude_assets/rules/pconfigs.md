@@ -217,7 +217,7 @@ The printed config is the source of truth for **everything** about a pconfigs ru
 - Reading a `.py` file to determine which subclass of a base class will be constructed at runtime.
 - Tracing imports to figure out the entrypoint of a runnable config.
 - Reading `pdefaults += ...` blocks to determine the effective default of a field.
-- Inferring TB tag strings, log paths, or any other resolved value from `@pproperty` methods in source.
+- Inferring computed file paths, log keys, or any other resolved value from `@pproperty` methods in source.
 
 The fix in every case is the same: print the config, grep the printed file.
 
@@ -242,7 +242,7 @@ grep -n "<thing>" /tmp/pconfig_<dotpath_tail>.py
 
 For "I want to understand what this experiment does" or "I'm planning a change," the cached print is sufficient. Re-reading source to update an in-memory model of the config is the wrong move — keep using the printed file.
 
-**Cite the printed-config path in any answer that names a runtime value, class, entrypoint, or sub-config wiring** (e.g., `/tmp/pconfig_encoded_latents_loss.py:15163`). If your answer doesn't cite a printed-config line, you didn't consult the source of truth.
+**Cite the printed-config path in any answer that names a runtime value, class, entrypoint, or sub-config wiring** (e.g., `/tmp/pconfig_my_experiment.py:15163`). If your answer doesn't cite a printed-config line, you didn't consult the source of truth.
 
 **Mental model:** Think of `.py` source as the pre-construction template and the printed config as the post-construction reality. Pconfigs is a compilation step from template to reality. Your reasoning must be against the post-construction reality, not the template.
 
