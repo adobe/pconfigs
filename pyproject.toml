@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pconfigs"
-version = "0.0.1a1"
+version = "0.1"
 description = "Configuration primitives and utilities for Python projects"
 license = "Apache-2.0"
 readme = "README.md"
