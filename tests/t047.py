@@ -19,8 +19,6 @@ from pconfigs.config_runner import ConfigRunnable
 parser = argparse.ArgumentParser()
 ConfigRunnable.make_argparser_args(parser)
 
-breakpoint()
-
 help_text = parser.format_help()
 assert "--config" not in help_text, (
     "--config must not appear in the help output of a ConfigRunnable. "
