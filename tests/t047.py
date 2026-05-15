@@ -31,6 +31,10 @@ assert isinstance(
 assert NoneConfig() == NoneConfig(), "Test 3 failed: two NoneConfig() instances should compare equal."
 
 
+#### Test 3b: NoneConfig is a singleton (like None itself: ``NoneConfig() is NoneConfig()``).
+assert NoneConfig() is NoneConfig(), "Test 3b failed: NoneConfig() should return the same instance every call."
+
+
 #### Test 4: NoneConfig rejects unknown kwargs.
 try:
     NoneConfig(unknown=1)

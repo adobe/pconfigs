@@ -136,6 +136,9 @@ class KwargMockFunc(KwargMockConfig):
 class NoneConfig(ConfigConstructableInterface):
     """A config whose ``construct()`` returns ``None``.
 
+    ``NoneConfig`` is a singleton, mirroring Python's ``None``: every ``NoneConfig()`` call returns the same
+    instance, so ``x is NoneConfig()`` works the same way ``x is None`` does.
+
     Use ``NoneConfig`` in a union with another constructable config to express an optional sub-config without
     forcing every constructor to write the verbose ternary pattern.
 
@@ -169,6 +172,17 @@ class NoneConfig(ConfigConstructableInterface):
     ``SubConfig(...)``. Both branches go through the same ``.construct()`` interface, so the consuming class
     does not need to know which case it received.
     """
+
+    # Stored without a type annotation on purpose: an annotated ``ClassVar[NoneConfig]`` would make the
+    # config print walker recurse into the singleton instance forever.
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        # Cannot use ``super()`` here: ``@pconfig`` rebuilds this class, so the implicit ``__class__`` cell
+        # would point to the pre-decoration class and break the super chain. Call ``object.__new__`` directly.
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
 
     def construct(self) -> None:
         return None
