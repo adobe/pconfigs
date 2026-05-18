@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import argparse
 import importlib
 import sys
 from dataclasses import dataclass
@@ -47,7 +48,7 @@ class ConfigRunnable(Runnable):
 
     @classmethod
     def make_argparser_args(cls, parser: ArgumentParser) -> ArgumentParser:
-        parser.add_argument("--config", help="Import string to config object.", type=str, required=True)
+        parser.add_argument("--config", help=argparse.SUPPRESS, type=str, required=True)
         return parser
 
     @classmethod
