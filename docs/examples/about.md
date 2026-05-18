@@ -33,3 +33,8 @@ This section outlines, in order, the basic functionality that is needed to build
   - {ref}`subsec-test-specific-pconfigs`
 - [Enums](enums)
   - {ref}`subsec-use-penum-to-print-interpretable-enum-values`
+- [Optional subconfigs](optional)
+  - {ref}`subsec-the-problem-optional-subconfig-and-the-ternary`
+  - {ref}`subsec-use-optionalconfig-and-noneconfig`
+  - {ref}`subsec-turn-the-subconfig-on-and-off`
+  - {ref}`subsec-bare-union-form`

@@ -139,6 +139,7 @@ examples/environments
 examples/properties
 examples/testing
 examples/enums
+examples/optional
 ```
 
 ```{toctree}
