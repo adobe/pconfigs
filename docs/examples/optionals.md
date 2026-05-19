@@ -1,4 +1,4 @@
-# Optional subconfigs
+# Optionals
 
 A subconfig can be marked optional, so the consuming class does not need to branch on its presence.
 
@@ -9,17 +9,17 @@ Annotate the field with `OptionalConfig[T]`, and call `.construct()` uniformly:
 ```python
 from pconfigs import OptionalConfig, NoneConfig, pconfig, pconfiged
 
-@pconfig(constructs=System)
-class SystemConfig:
-    evaluator_config: OptionalConfig[EvaluatorConfig]   # Equivalent to ``EvaluatorConfig | OptionalConfig``.
-
-
 @pconfiged
 class System:
     config: SystemConfig
 
     def __init__(self):
-        self.evaluator = self.config.evaluator_config.construct()   # ``None`` when ``NoneConfig`` was passed.
+        self.evaluator = self.config.evaluator_config.construct()
+
+
+@pconfig(constructs=System)
+class SystemConfig:
+    evaluator_config: OptionalConfig[EvaluatorConfig]
 ```
 `NoneConfig.construct()` returns `None`.
 
@@ -28,8 +28,12 @@ class System:
 
 Pass `NoneConfig` to disable, and an `EvaluatorConfig(...)` instance to enable:
 ```python
-system_without_eval = SystemConfig(evaluator_config=NoneConfig).construct()
-system_with_eval    = SystemConfig(evaluator_config=EvaluatorConfig(...)).construct()
+system_without_eval = SystemConfig(
+    evaluator_config=NoneConfig,
+)
+system_with_eval = SystemConfig(
+    evaluator_config=EvaluatorConfig(...),
+)
 ```
 `NoneConfig` is a module-level singleton---like Python's `None`, it is passed as a value, not constructed.
 
