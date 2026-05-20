@@ -17,7 +17,7 @@ from typing import Any, Callable, ClassVar, Type, TypeVar, Union
 from pconfigs.config import Config
 from pconfigs.kwarg_mock import KwargMockConfig, NotMock
 from pconfigs.kwarg_mock import Required as KwargMockRequired
-from pconfigs.pinnable import Required
+from pconfigs.pinnable import Required, pconfig, pdefaults
 
 
 @dataclass(repr=False)
@@ -130,3 +130,75 @@ class KwargMockFunc(KwargMockConfig):
 
     def construct(self) -> KwargMockFunc:
         return self
+
+
+@pconfig
+class OptionalConfig(ConfigConstructableInterface):
+    """A config whose ``construct()`` returns ``None``; the type half of an ``Optional``-style field.
+
+    ``OptionalConfig`` mirrors Python's ``Optional[T]``/``None`` split: ``OptionalConfig`` is the type
+    (used in annotations), and :data:`NoneConfig` is its singleton instance (used as a value). The
+    relationship is identical to ``NoneType`` vs ``None``.
+
+    Use ``OptionalConfig`` in a field annotation to express an optional sub-config without forcing every
+    constructor to write the verbose ternary pattern.
+
+    Without ``OptionalConfig`` (verbose, branches at every use site)::
+
+        @pconfig(constructs=MyClass)
+        class MyClassConfig:
+            sub_config: Optional[SubConfig]
+
+        @pconfiged
+        class MyClass:
+            def __init__(self):
+                self.sub = (
+                    self.config.sub_config.construct()
+                    if self.config.sub_config is not None
+                    else None
+                )
+
+    With ``OptionalConfig`` (uniform, single ``construct()`` call)::
+
+        @pconfig(constructs=MyClass)
+        class MyClassConfig:
+            sub_config: OptionalConfig[SubConfig]   # equivalent to ``SubConfig | OptionalConfig``
+
+        @pconfiged
+        class MyClass:
+            def __init__(self):
+                self.sub = self.config.sub_config.construct()  # ``None`` when sub_config is NoneConfig
+
+    Callers turn the sub-config off by passing ``sub_config=NoneConfig`` and on by passing a real
+    ``SubConfig(...)``. Both branches go through the same ``.construct()`` interface, so the consuming
+    class does not need to know which case it received.
+
+    ``OptionalConfig[T]`` is a typing shortcut that evaluates to ``Union[T, OptionalConfig]``, the same
+    way ``Optional[T]`` evaluates to ``Union[T, None]``. Bare ``OptionalConfig`` works too, e.g.
+    ``other_config: OtherConfig | OptionalConfig``.
+    """
+
+    # Stored without a type annotation on purpose: an annotated ``ClassVar[OptionalConfig]`` would make
+    # the config print walker recurse into the singleton instance forever.
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        # Cannot use ``super()`` here: ``@pconfig`` rebuilds this class, so the implicit ``__class__`` cell
+        # would point to the pre-decoration class and break the super chain. Call ``object.__new__`` directly.
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
+
+    def __class_getitem__(cls, item):
+        # Mirror ``Optional[T] == Union[T, None]``: ``OptionalConfig[T] == Union[T, OptionalConfig]``.
+        return Union[item, cls]
+
+    def construct(self) -> None:
+        return None
+
+
+# Module-level singleton instance, mirroring Python's ``None`` (an instance of ``NoneType``).
+# Users write ``field: OptionalConfig[T]`` for the type and pass ``NoneConfig`` for the value.
+NoneConfig = OptionalConfig()
+
+pdefaults += NoneConfig
