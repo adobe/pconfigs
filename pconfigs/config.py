@@ -234,7 +234,7 @@ class PrettyPrinterDataclass:
                     ans += val._print(prefix + "  ", trace=False, shortnames=shortnames, imports=imports)
                     ans += prefix + "),\n"
 
-            elif issubclass(type(val), list) and any([issubclass_legacy_compat(type(x), Config) for x in val]):
+            elif issubclass(type(val), (list, tuple)) and any([issubclass_legacy_compat(type(x), Config) for x in val]):
                 if trace:
                     ans += [len(keystr)]
                     for x in val:
@@ -244,7 +244,8 @@ class PrettyPrinterDataclass:
                             ans += (len(self._sanitize_printed_value(string=str(x))),)
 
                 else:
-                    ans += (field_fmt + " = [\n").format(keystr)
+                    opening, closing = ("[", "]") if isinstance(val, list) else ("(", ")")
+                    ans += (field_fmt + " = {}\n").format(keystr, opening)
                     for index, x in enumerate(val):
                         if issubclass_legacy_compat(type(x), Config):
                             typename = type(x).__name__ if shortnames else str(type(x))
@@ -258,7 +259,7 @@ class PrettyPrinterDataclass:
                             x_str = self._sanitize_printed_value(string=str(x))
                             ans += prefix + "  " + x_str + ",\n"
 
-                    ans += prefix + "],\n"
+                    ans += prefix + closing + ",\n"
 
             elif issubclass(type(val), dict) and any(
                 [issubclass_legacy_compat(type(val), Config) for key, val in val.items()]
