@@ -62,8 +62,9 @@ def iter_package_py(root: Path) -> Iterator[Path]:
     """Yield .py files under root, recursing into Python packages and
     implicit namespace packages (PEP 420).
 
-    We include any subdirectory (namespace packages do not require
-    an "__init__.py"). Excludes "__init__.py" and "__pconfigs__.py" files.
+    We include any subdirectory except hidden ones (names starting with "."),
+    since namespace packages do not require an "__init__.py". Excludes
+    "__init__.py" and "__pconfigs__.py" files.
     """
     try:
         entries = sorted(root.iterdir())
@@ -72,8 +73,9 @@ def iter_package_py(root: Path) -> Iterator[Path]:
 
     for e in entries:
         if e.is_dir():
-            # Descend into all directories; implicit namespaces are valid
-            yield from iter_package_py(e)
+            # Descend into all non-hidden directories; implicit namespaces are valid
+            if not e.name.startswith("."):
+                yield from iter_package_py(e)
         elif e.suffix == ".py" and e.name not in ("__init__.py", "__pconfigs__.py"):
             yield e
 
@@ -125,7 +127,13 @@ ExceptionAndSource = Tuple[Exception, Path]
 def list_configs() -> Iterator[Tuple[TestTarget, ImportableAndSource | ExceptionAndSource]]:
     start_dir = Path(os.getcwd())
 
-    for pconfigs_file in start_dir.rglob("__pconfigs__.py"):
+    for dirpath, dirnames, filenames in os.walk(start_dir):
+        # Skip hidden directories (names starting with "."), such as .git and .venv.
+        dirnames[:] = [dirname for dirname in dirnames if not dirname.startswith(".")]
+        if "__pconfigs__.py" not in filenames:
+            continue
+
+        pconfigs_file = Path(dirpath) / "__pconfigs__.py"
         curr_dir = pconfigs_file.parent
         pconfigs_dotpath = make_dotpath_from_module_path(pconfigs_file)
 

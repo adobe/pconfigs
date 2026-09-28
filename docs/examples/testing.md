@@ -51,7 +51,7 @@ which is installed with the `pconfigs` package. This command calls `pytest` with
 ```console
 ~/my_project$ pytest --pyargs pconfigs.test
 ```
-Both invocations will run the same tests: all `.py` files in directories that contain a `__pconfigs__.py` sentinel file will be evaluated. This validates that all `@pproperties` run without error.
+Both invocations will run the same tests: all `.py` files in directories that contain a `__pconfigs__.py` sentinel file will be evaluated. This validates that all `@pproperties` run without error. The search for sentinel files starts in the current directory and covers all of its subdirectories except hidden ones (names starting with `.`, such as `.git` or `.venv`).
 
 
  (subsec-test-all-subdirectories)=
@@ -63,7 +63,7 @@ Modify `__pconfigs__.py`:
 ```python
 from pconfigs import TestSubdirs
 ```
-By importing the `TestSubdirs` sentinel, `pconfigs.test` will test all `.py` config files in all subdirectories regardless of whether the subdirectory contains a `__pconfigs__.py` file.
+By importing the `TestSubdirs` sentinel, `pconfigs.test` will test all `.py` config files in all subdirectories except hidden ones, regardless of whether the subdirectory contains a `__pconfigs__.py` file.
 
  (subsec-test-specific-pconfigs)=
 ## Test specific pconfigs.
